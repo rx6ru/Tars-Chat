@@ -2,16 +2,19 @@
 
 import { useState } from "react";
 import { Search } from "lucide-react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { OnlineDot } from "@/components/shared/OnlineDot";
+import { useRouter } from "next/navigation";
 
 export function SidebarSearch() {
     const [query, setQuery] = useState("");
     const searchResults = useQuery(api.users.searchUsers, { query });
+    const getOrCreateDM = useMutation(api.conversations.getOrCreateDM);
+    const router = useRouter();
 
     return (
         <div className="flex flex-col border-b border-[#1E1530]">
@@ -46,6 +49,14 @@ export function SidebarSearch() {
                                 searchResults.map((user) => (
                                     <button
                                         key={user._id}
+                                        onClick={async () => {
+                                            try {
+                                                const conversationId = await getOrCreateDM({ otherUserId: user._id });
+                                                router.push(`/conversation/${conversationId}`);
+                                            } catch (error) {
+                                                console.error("Failed to start conversation:", error);
+                                            }
+                                        }}
                                         className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-[#1E1530]/50 transition-colors"
                                     >
                                         <div className="relative">
