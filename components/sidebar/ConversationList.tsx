@@ -86,7 +86,7 @@ export function ConversationList() {
                                     </span>
                                     {conv.unreadCount > 0 && (
                                         <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#6D33AB] px-1.5 text-[10px] font-medium text-white">
-                                            {conv.unreadCount}
+                                            {conv.unreadCount > 99 ? "99+" : conv.unreadCount}
                                         </span>
                                     )}
                                 </div>

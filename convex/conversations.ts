@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
+import { Doc } from "./_generated/dataModel";
 
 export const getOrCreateDM = mutation({
     args: { otherUserId: v.id("users") },
@@ -15,18 +16,15 @@ export const getOrCreateDM = mutation({
 
         if (!currentUser) throw new ConvexError("User not found");
 
-        // Can't DM yourself
         if (currentUser._id === args.otherUserId) {
             throw new ConvexError("Cannot start a conversation with yourself");
         }
 
-        // Find all conversations currentUser is in
         const currentUserMemberships = await ctx.db
             .query("conversationMembers")
             .withIndex("by_userId", (q) => q.eq("userId", currentUser._id))
             .collect();
 
-        // Check if there's an existing DM (isGroup: false) containing both users
         for (const membership of currentUserMemberships) {
             const conversation = await ctx.db.get(membership.conversationId);
             if (!conversation || conversation.isGroup) continue;
@@ -41,26 +39,22 @@ export const getOrCreateDM = mutation({
                 .first();
 
             if (otherMembership) {
-                // DM already exists
                 return conversation._id;
             }
         }
 
-        // No existing DM found, create a new one
         const newConversationId = await ctx.db.insert("conversations", {
             isGroup: false,
             createdBy: currentUser._id,
             createdAt: Date.now(),
         });
 
-        // Add current user to conversation
         await ctx.db.insert("conversationMembers", {
             conversationId: newConversationId,
             userId: currentUser._id,
             joinedAt: Date.now(),
         });
 
-        // Add other user to conversation
         await ctx.db.insert("conversationMembers", {
             conversationId: newConversationId,
             userId: args.otherUserId,
@@ -74,7 +68,7 @@ export const getOrCreateDM = mutation({
 export const createGroup = mutation({
     args: {
         name: v.string(),
-        memberIds: v.array(v.id("users")), // Excludes current user, current user added implicitly
+        memberIds: v.array(v.id("users")),
     },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
@@ -98,14 +92,12 @@ export const createGroup = mutation({
             createdAt: Date.now(),
         });
 
-        // Add current user
         await ctx.db.insert("conversationMembers", {
             conversationId: newConversationId,
             userId: currentUser._id,
             joinedAt: Date.now(),
         });
 
-        // Add other members
         for (const memberId of args.memberIds) {
             await ctx.db.insert("conversationMembers", {
                 conversationId: newConversationId,
@@ -115,6 +107,54 @@ export const createGroup = mutation({
         }
 
         return newConversationId;
+    },
+});
+
+export const getConversation = query({
+    args: {
+        conversationId: v.id("conversations"),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) return null;
+
+        const currentUser = await ctx.db
+            .query("users")
+            .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+            .first();
+
+        if (!currentUser) return null;
+
+        const conversation = await ctx.db.get(args.conversationId);
+        if (!conversation) return null;
+
+        const membership = await ctx.db
+            .query("conversationMembers")
+            .withIndex("by_conversationId_userId", (q) =>
+                q.eq("conversationId", args.conversationId).eq("userId", currentUser._id)
+            )
+            .first();
+
+        if (!membership) return null;
+
+        let otherMember: Doc<"users"> | null = null;
+
+        if (!conversation.isGroup) {
+            const members = await ctx.db
+                .query("conversationMembers")
+                .withIndex("by_conversationId", (q) => q.eq("conversationId", args.conversationId))
+                .collect();
+
+            const otherMembership = members.find(m => m.userId !== currentUser._id);
+            if (otherMembership) {
+                otherMember = await ctx.db.get(otherMembership.userId);
+            }
+        }
+
+        return {
+            ...conversation,
+            otherMember,
+        };
     },
 });
 
@@ -141,10 +181,9 @@ export const getConversations = query({
                 const conversation = await ctx.db.get(membership.conversationId);
                 if (!conversation) return null;
 
-                let otherMember = null;
-                let lastMessage = null;
+                let otherMember: Doc<"users"> | null = null;
+                let lastMessage: Doc<"messages"> | null = null;
 
-                // If it's a DM, fetch the other user's info
                 if (!conversation.isGroup) {
                     const members = await ctx.db
                         .query("conversationMembers")
@@ -157,7 +196,6 @@ export const getConversations = query({
                     }
                 }
 
-                // Fetch last message
                 const messages = await ctx.db
                     .query("messages")
                     .withIndex("by_conversationId", (q) => q.eq("conversationId", conversation._id))
@@ -168,7 +206,6 @@ export const getConversations = query({
                     lastMessage = messages[0];
                 }
 
-                // Calculate unread message count purely by message count after lastReadMessageId
                 let unreadCount = 0;
                 if (membership.lastReadMessageId) {
                     const lastReadMsg = await ctx.db.get(membership.lastReadMessageId);
@@ -180,11 +217,9 @@ export const getConversations = query({
                                     .gt("createdAt", lastReadMsg.createdAt)
                             )
                             .collect();
-                        // Exclude own messages from unread count
                         unreadCount = newerMessages.filter(m => m.senderId !== currentUser._id).length;
                     }
                 } else {
-                    // No last read message = all messages from others are unread
                     const allMessages = await ctx.db
                         .query("messages")
                         .withIndex("by_conversationId", (q) => q.eq("conversationId", conversation._id))
@@ -201,7 +236,6 @@ export const getConversations = query({
             })
         );
 
-        // Filter out nulls and sort by last message date, falling back to creation date
         return conversationsWithDetails
             .filter((c): c is NonNullable<typeof c> => c !== null)
             .sort((a, b) => {
@@ -209,5 +243,41 @@ export const getConversations = query({
                 const timeB = b.lastMessage?.createdAt || b.createdAt;
                 return timeB - timeA;
             });
+    },
+});
+
+export const markAsRead = mutation({
+    args: { conversationId: v.id("conversations") },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) return;
+
+        const currentUser = await ctx.db
+            .query("users")
+            .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+            .first();
+
+        if (!currentUser) return;
+
+        const membership = await ctx.db
+            .query("conversationMembers")
+            .withIndex("by_conversationId_userId", (q) =>
+                q.eq("conversationId", args.conversationId).eq("userId", currentUser._id)
+            )
+            .first();
+
+        if (!membership) return;
+
+        const lastMessage = await ctx.db
+            .query("messages")
+            .withIndex("by_conversationId", (q) => q.eq("conversationId", args.conversationId))
+            .order("desc")
+            .first();
+
+        if (lastMessage && membership.lastReadMessageId !== lastMessage._id) {
+            await ctx.db.patch(membership._id, {
+                lastReadMessageId: lastMessage._id,
+            });
+        }
     },
 });

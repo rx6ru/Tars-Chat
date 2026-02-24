@@ -10,6 +10,8 @@
 
 import type * as conversations from "../conversations.js";
 import type * as http from "../http.js";
+import type * as messages from "../messages.js";
+import type * as presence from "../presence.js";
 import type * as users from "../users.js";
 
 import type {
@@ -21,6 +23,8 @@ import type {
 declare const fullApi: ApiFromModules<{
   conversations: typeof conversations;
   http: typeof http;
+  messages: typeof messages;
+  presence: typeof presence;
   users: typeof users;
 }>;
 

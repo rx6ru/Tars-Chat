@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 import { ConvexClientProvider } from "@/components/providers/ConvexClientProvider";
+import { PresenceProvider } from "@/components/providers/PresenceProvider";
 
 export const metadata: Metadata = {
   title: "Tars Chat",
@@ -30,6 +31,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ConvexClientProvider>
+          <PresenceProvider />
           {children}
         </ConvexClientProvider>
       </body>

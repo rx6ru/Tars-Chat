@@ -2,9 +2,14 @@ import { Sidebar } from "@/components/sidebar/Sidebar";
 
 export default function ChatPage() {
     return (
-        <>
-            <Sidebar />
-            <main className="flex flex-1 flex-col items-center justify-center bg-[#0F0A1A]">
+        <div className="flex h-screen w-full overflow-hidden bg-[#0F0A1A]">
+            {/* Sidebar takes full width on mobile, 320px on desktop */}
+            <div className="w-full md:w-80 h-full border-r border-[#1E1530] flex-shrink-0">
+                <Sidebar />
+            </div>
+
+            {/* Main empty chat area is hidden on mobile, visible on desktop */}
+            <main className="hidden md:flex flex-1 flex-col items-center justify-center bg-[#0F0A1A]">
                 <div className="flex flex-col items-center text-center space-y-4 max-w-sm mx-auto p-8">
                     <div className="rounded-full bg-[#1A1128] border border-[#1E1530] p-4 text-[#6D33AB]">
                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -17,6 +22,6 @@ export default function ChatPage() {
                     </p>
                 </div>
             </main>
-        </>
+        </div>
     );
 }

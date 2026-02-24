@@ -11,6 +11,9 @@ import { useRouter } from "next/navigation";
 export function UserList() {
     const users = useQuery(api.users.getUsers);
 
+    const getOrCreateDM = useMutation(api.conversations.getOrCreateDM);
+    const router = useRouter();
+
     if (users === undefined) {
         return (
             <div className="flex flex-col gap-2 p-4">
@@ -41,6 +44,14 @@ export function UserList() {
                 {users.map((user) => (
                     <button
                         key={user._id}
+                        onClick={async () => {
+                            try {
+                                const conversationId = await getOrCreateDM({ otherUserId: user._id });
+                                router.push(`/conversation/${conversationId}`);
+                            } catch (error) {
+                                console.error("Failed to start conversation:", error);
+                            }
+                        }}
                         className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-[#1E1530]/50 transition-colors"
                     >
                         <div className="relative">
