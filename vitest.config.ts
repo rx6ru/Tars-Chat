@@ -7,14 +7,14 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./src/test/setup.ts"],
+    setupFiles: ["./test/setup.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
       exclude: [
         "node_modules/",
-        "src/test/",
-        "src/components/ui/",
+        "test/",
+        "components/ui/",
         "convex/_generated/",
         "*.config.*",
       ],
@@ -22,7 +22,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(__dirname, "./"),
     },
   },
 });
