@@ -23,7 +23,13 @@ export const getUsers = query({
         const currentClerkId = identity.subject;
 
         const users = await ctx.db.query("users").collect();
-        return users.filter((u) => u.clerkId !== currentClerkId);
+        const now = Date.now();
+        return users
+            .filter((u) => u.clerkId !== currentClerkId)
+            .map((u) => ({
+                ...u,
+                isOnline: u.isOnline && (now - u.lastSeen < 120000),
+            }));
     },
 });
 
@@ -37,19 +43,30 @@ export const searchUsers = query({
         const { query } = args;
 
         const allUsers = await ctx.db.query("users").collect();
+        const now = Date.now();
 
         // If no query string, return everyone except the current user
         if (!query || query.trim() === "") {
-            return allUsers.filter((u) => u.clerkId !== currentClerkId);
+            return allUsers
+                .filter((u) => u.clerkId !== currentClerkId)
+                .map((u) => ({
+                    ...u,
+                    isOnline: u.isOnline && (now - u.lastSeen < 120000),
+                }));
         }
 
         // If there is a query, filter by string match AND exclude current user
         const searchLower = query.toLowerCase();
-        return allUsers.filter((u) => {
-            if (u.clerkId === currentClerkId) return false;
-            return u.name.toLowerCase().includes(searchLower) ||
-                u.email.toLowerCase().includes(searchLower);
-        });
+        return allUsers
+            .filter((u) => {
+                if (u.clerkId === currentClerkId) return false;
+                return u.name.toLowerCase().includes(searchLower) ||
+                    u.email.toLowerCase().includes(searchLower);
+            })
+            .map((u) => ({
+                ...u,
+                isOnline: u.isOnline && (now - u.lastSeen < 120000),
+            }));
     },
 });
 

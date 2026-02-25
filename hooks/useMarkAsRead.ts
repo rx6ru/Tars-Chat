@@ -3,13 +3,13 @@ import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 
-export function useMarkAsRead(conversationId: Id<"conversations">) {
+export function useMarkAsRead(conversationId: Id<"conversations">, messagesCount?: number) {
     const markAsRead = useMutation(api.conversations.markAsRead);
 
     useEffect(() => {
         if (!api.conversations?.markAsRead) return;
 
-        // Mark as read immediately on mount
+        // Mark as read immediately on mount or when new messages arrive
         markAsRead({ conversationId }).catch(console.error);
 
         // Mark as read when the window regains focus
@@ -21,5 +21,5 @@ export function useMarkAsRead(conversationId: Id<"conversations">) {
         return () => {
             window.removeEventListener("focus", handleFocus);
         };
-    }, [conversationId, markAsRead]);
+    }, [conversationId, markAsRead, messagesCount]);
 }

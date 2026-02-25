@@ -16,6 +16,10 @@ export function Sidebar() {
         if (savedView === "dms" || savedView === "groups") {
             setView(savedView);
         }
+
+        const handleViewChange = () => setView("groups");
+        window.addEventListener("sidebar-view-change", handleViewChange);
+        return () => window.removeEventListener("sidebar-view-change", handleViewChange);
     }, []);
 
     // Save view preference whenever it changes

@@ -56,6 +56,13 @@ export function usePresence() {
             updateOffline();
         };
 
+        // Heartbeat to keep online status fresh (every 60 seconds)
+        const heartbeat = setInterval(() => {
+            if (document.visibilityState === "visible") {
+                updateOnline();
+            }
+        }, 60000);
+
         document.addEventListener("visibilitychange", handleVisibilityChange);
         window.addEventListener("focus", handleFocus);
         window.addEventListener("blur", handleBlur);
@@ -63,6 +70,7 @@ export function usePresence() {
 
         return () => {
             mounted = false;
+            clearInterval(heartbeat);
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("focus", handleFocus);
             window.removeEventListener("blur", handleBlur);

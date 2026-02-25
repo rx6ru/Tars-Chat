@@ -154,6 +154,10 @@ export const getConversation = query({
             }
         }
 
+        if (otherMember) {
+            otherMember.isOnline = otherMember.isOnline && (Date.now() - otherMember.lastSeen < 120000);
+        }
+
         return {
             ...conversation,
             otherMember,
@@ -200,6 +204,9 @@ export const getConversations = query({
                     const otherMembership = members.find(m => m.userId !== currentUser._id);
                     if (otherMembership) {
                         otherMember = await ctx.db.get(otherMembership.userId);
+                        if (otherMember) {
+                            otherMember.isOnline = otherMember.isOnline && (Date.now() - otherMember.lastSeen < 120000);
+                        }
                     }
                 }
 
@@ -320,6 +327,9 @@ export const getGroupMembers = query({
         const users = await Promise.all(
             members.map(async (m) => {
                 const user = await ctx.db.get(m.userId);
+                if (user) {
+                    user.isOnline = user.isOnline && (Date.now() - user.lastSeen < 120000);
+                }
                 return user;
             })
         );

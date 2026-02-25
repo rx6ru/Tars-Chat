@@ -127,7 +127,7 @@ export const getTypingUsers = query({
 
         const typingUsers = await Promise.all(
             typingRecords
-                .filter((record) => record.userId !== currentUser._id)
+                .filter((record) => record.userId !== currentUser._id && (Date.now() - record.lastTypedAt) < 5000)
                 .map(async (record) => {
                     const user = await ctx.db.get(record.userId);
                     return user;

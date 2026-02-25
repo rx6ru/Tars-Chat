@@ -34,19 +34,26 @@ export const toggleReaction = mutation({
             throw new ConvexError("Not a member of this conversation");
         }
 
-        // Check if reaction already exists
+        // Check if a reaction by this user on this message already exists
         const existingReaction = await ctx.db
             .query("reactions")
             .withIndex("by_messageId_userId", (q) =>
                 q.eq("messageId", args.messageId).eq("userId", currentUser._id)
             )
-            .filter((q) => q.eq(q.field("emoji"), args.emoji))
             .first();
 
         if (existingReaction) {
-            // Remove it
-            await ctx.db.delete(existingReaction._id);
-            return { action: "removed" };
+            if (existingReaction.emoji === args.emoji) {
+                // Remove it if clicking the same emoji
+                await ctx.db.delete(existingReaction._id);
+                return { action: "removed" };
+            } else {
+                // Overwrite it if clicking a different emoji
+                await ctx.db.patch(existingReaction._id, {
+                    emoji: args.emoji
+                });
+                return { action: "updated" };
+            }
         } else {
             // Add it
             await ctx.db.insert("reactions", {

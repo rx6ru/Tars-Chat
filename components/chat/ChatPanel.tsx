@@ -19,11 +19,11 @@ export function ChatPanel({ conversationId }: ChatPanelProps) {
     const { isAuthenticated } = useConvexAuth();
     const [replyingTo, setReplyingTo] = useState<MessageWithSender | null>(null);
 
-    useMarkAsRead(conversationId);
-
     const conversation = useQuery(api.conversations.getConversation, isAuthenticated ? { conversationId } : "skip");
     const messages = useQuery(api.messages.getMessages, isAuthenticated ? { conversationId } : "skip");
     const typingUsers = useQuery(api.presence?.getTypingUsers || ("" as "query"), isAuthenticated ? { conversationId } : "skip");
+
+    useMarkAsRead(conversationId, messages?.length);
 
     if (conversation === undefined || messages === undefined) {
         return (
@@ -47,7 +47,7 @@ export function ChatPanel({ conversationId }: ChatPanelProps) {
                                         className={`
                                             h-12 rounded-2xl
                                             ${i % 2 === 0 ? "rounded-bl-none" : "rounded-br-none"}
-                                            ${i % 3 === 0 ? "w-48" : "w-32"}
+                                            ${i % 3 === 0 ? "w-[60%]" : "w-[40%]"}
                                         `}
                                     />
                                 </div>

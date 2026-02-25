@@ -5,12 +5,13 @@ import { api } from "@/convex/_generated/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Users, MessageSquare } from "lucide-react";
 
 export function ConversationList({ filter = "dms" }: { filter?: "dms" | "groups" }) {
     const conversations = useQuery(api.conversations.getConversations);
     const router = useRouter();
+    const pathname = usePathname();
 
     if (conversations === undefined) {
         return (
@@ -59,12 +60,16 @@ export function ConversationList({ filter = "dms" }: { filter?: "dms" | "groups"
                     const isGroup = conv.isGroup;
                     const name = isGroup ? conv.name : conv.otherMember?.name || "Unknown User";
                     const imageUrl = !isGroup ? conv.otherMember?.imageUrl : undefined;
+                    const isActive = pathname === `/conversation/${conv._id}`;
 
                     return (
                         <button
                             key={conv._id}
                             onClick={() => router.push(`/conversation/${conv._id}`)}
-                            className="group relative flex w-full items-center gap-3 rounded-md p-2 text-left bg-transparent border-l-2 border-transparent hover:bg-t-bg-item hover:border-l-2 hover:border-t-accent transition-all"
+                            className={`group relative flex w-full items-center gap-3 rounded-md p-2 text-left border-l-2 transition-all ${isActive
+                                    ? "bg-t-bg-item-active border-l-t-accent"
+                                    : "bg-transparent border-transparent hover:bg-t-bg-item hover:border-l-t-accent"
+                                }`}
                         >
                             <Avatar className="h-10 w-10 shrink-0 bg-t-bg-item border border-t-border">
                                 {imageUrl ? (

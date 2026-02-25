@@ -32,7 +32,15 @@ export function NewMessageDrawer() {
             .map(c => c.otherMember!._id) || []
     );
 
+    const knownContacts = conversations
+        ?.filter(c => !c.isGroup && c.otherMember)
+        .map(c => c.otherMember!)
+        .filter((user, index, self) =>
+            index === self.findIndex((t) => t._id === user._id)
+        ) || [];
+
     const dmSearchResults = searchResults?.filter(u => !existingDmUserIds.has(u._id));
+    const displayGroupUsers = query ? searchResults : knownContacts;
     const getOrCreateDM = useMutation(api.conversations.getOrCreateDM);
     const createGroup = useMutation(api.conversations.createGroup);
     const router = useRouter();
@@ -74,6 +82,11 @@ export function NewMessageDrawer() {
             setOpen(false);
             setGroupName("");
             setSelectedMembers([]);
+
+            // Switch sidebar view
+            localStorage.setItem("sidebarView", "groups");
+            window.dispatchEvent(new Event("sidebar-view-change"));
+
             router.push(`/conversation/${conversationId}`);
             toast.success("Group created!");
         } catch (error) {
@@ -220,20 +233,18 @@ export function NewMessageDrawer() {
                         <div className="flex-1 overflow-hidden">
                             <ScrollArea className="h-full">
                                 <div className="flex flex-col gap-1 p-2">
-                                    {!query ? (
-                                        <div className="p-4 text-center text-sm text-muted-foreground">
-                                            Search for users to add to the group...
-                                        </div>
-                                    ) : searchResults === undefined ? (
+                                    {displayGroupUsers === undefined ? (
                                         <div className="p-4 text-center text-sm text-muted-foreground animate-pulse">
-                                            Searching...
+                                            {query ? "Searching..." : "Loading..."}
                                         </div>
-                                    ) : searchResults.length === 0 ? (
+                                    ) : displayGroupUsers.length === 0 ? (
                                         <div className="p-4 text-center text-sm text-muted-foreground">
-                                            No users found matching &quot;{query}&quot;
+                                            {query
+                                                ? `No users found matching "${query}"`
+                                                : "No existing contacts. Search for users to add to the group..."}
                                         </div>
                                     ) : (
-                                        searchResults.map((user) => (
+                                        displayGroupUsers.map((user) => (
                                             <div
                                                 key={user._id}
                                                 className="flex items-center gap-3 rounded-lg p-3 hover:bg-t-bg-item-active transition-colors cursor-pointer"
@@ -244,12 +255,19 @@ export function NewMessageDrawer() {
                                                     onCheckedChange={() => toggleMember(user._id)}
                                                     className="border-t-border data-[state=checked]:bg-t-accent data-[state=checked]:border-t-accent"
                                                 />
-                                                <Avatar className="h-10 w-10 border border-t-border bg-t-bg-item">
-                                                    <AvatarImage src={user.imageUrl} alt={user.name} />
-                                                    <AvatarFallback className="bg-transparent text-white">
-                                                        {user.name.charAt(0).toUpperCase()}
-                                                    </AvatarFallback>
-                                                </Avatar>
+                                                <div className="relative">
+                                                    <Avatar className="h-10 w-10 border border-t-border bg-t-bg-item">
+                                                        <AvatarImage src={user.imageUrl} alt={user.name} />
+                                                        <AvatarFallback className="bg-transparent text-white font-medium">
+                                                            {user.name.charAt(0).toUpperCase()}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    {user.isOnline && (
+                                                        <div className="absolute bottom-0 right-0">
+                                                            <OnlineDot isOnline={user.isOnline} />
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 <span className="flex-1 truncate text-base font-medium text-white">
                                                     {user.name}
                                                 </span>
