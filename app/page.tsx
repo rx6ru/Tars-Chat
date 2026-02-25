@@ -44,7 +44,7 @@ export default function LandingPage() {
                             <Button asChild size="lg" className="bg-[#6D33AB] hover:bg-[#59298c] text-white px-8">
                                 <Link href="/chat">Join the Workspace</Link>
                             </Button>
-                            <Link href="https://github.com" className="text-sm font-semibold leading-6 text-white hover:text-gray-300 transition-colors">
+                            <Link href="https://github.com/rx6ru/Tars-Chat" className="text-sm font-semibold leading-6 text-white hover:text-gray-300 transition-colors" target="_blank" rel="noopener noreferrer">
                                 View Documentation <span aria-hidden="true">→</span>
                             </Link>
                         </div>
