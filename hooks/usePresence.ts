@@ -1,10 +1,22 @@
 import { useEffect } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
 export function usePresence() {
-    const setOnline = useMutation(api.presence?.setOnline || ("" as any));
-    const setOffline = useMutation(api.presence?.setOffline || ("" as any));
+    const { isAuthenticated, isLoading } = useConvexAuth();
+    const setOnline = useMutation(api.presence?.setOnline || ("" as "mutation"));
+    const setOffline = useMutation(api.presence?.setOffline || ("" as "mutation"));
+    const storeUser = useMutation(api.users.storeUser);
+
+    useEffect(() => {
+        console.log("usePresence: isAuthenticated =", isAuthenticated);
+        if (isAuthenticated) {
+            console.log("usePresence: calling storeUser...");
+            storeUser()
+                .then((res) => console.log("usePresence: storeUser success =", res))
+                .catch((err) => console.error("usePresence: storeUser error =", err));
+        }
+    }, [storeUser, isAuthenticated]);
 
     useEffect(() => {
         if (!api.presence) return;
@@ -57,5 +69,5 @@ export function usePresence() {
             window.removeEventListener("beforeunload", handleBeforeUnload);
             updateOffline();
         };
-    }, []);
+    }, [setOffline, setOnline]);
 }

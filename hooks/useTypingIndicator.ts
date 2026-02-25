@@ -4,7 +4,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 
 export function useTypingIndicator(conversationId: Id<"conversations">) {
-    const setTyping = useMutation(api.presence?.setTyping || ("" as any));
+    const setTyping = useMutation(api.presence?.setTyping || ("" as "mutation"));
     const lastTypedAt = useRef<number>(0);
 
     const onType = useCallback(() => {

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 
 interface ConversationWithDetails extends Doc<"conversations"> {
     otherMember?: Doc<"users"> | null;
+    memberCount?: number;
 }
 
 interface ChatHeaderProps {
@@ -20,26 +21,22 @@ export function ChatHeader({ conversation }: ChatHeaderProps) {
     const isOnline = !isGroup ? conversation.otherMember?.isOnline : false;
 
     return (
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#1E1530] bg-[#0F0A1A] px-4 shadow-sm">
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-t-border bg-t-bg-app px-4">
             <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" asChild className="md:hidden text-white hover:bg-[#1A1128] hover:text-[#C084FC]">
+                <Button variant="ghost" size="icon" asChild className="md:hidden text-t-text-hi hover:bg-t-bg-item hover:text-t-text-hi">
                     <Link href="/">
                         <ArrowLeft className="h-5 w-5" />
                         <span className="sr-only">Back</span>
                     </Link>
                 </Button>
                 <div className="relative">
-                    <Avatar className="h-10 w-10 border border-[#1E1530] bg-[#1A1128]">
+                    <Avatar className="h-10 w-10 border border-t-border bg-t-bg-item">
                         {imageUrl ? (
                             <AvatarImage src={imageUrl} alt={name || "User"} />
-                        ) : isGroup ? (
-                            <div className="flex h-full w-full items-center justify-center text-[#6D33AB]">
-                                <Users className="h-5 w-5" />
-                            </div>
                         ) : (
-                            <AvatarFallback className="bg-[#1A1128] text-white">
+                            <div className="flex h-full w-full items-center justify-center bg-t-bg-item text-t-text-mid font-medium text-sm">
                                 {(name || "?").charAt(0).toUpperCase()}
-                            </AvatarFallback>
+                            </div>
                         )}
                     </Avatar>
                     {isOnline && (
@@ -49,8 +46,15 @@ export function ChatHeader({ conversation }: ChatHeaderProps) {
                     )}
                 </div>
                 <div className="flex flex-col">
-                    <span className="font-semibold text-white">{name}</span>
-                    {/* Add typing status here later */}
+                    <span className="font-semibold text-t-text-hi text-sm tracking-tight">{name}</span>
+                    {isGroup && (
+                        <span className="text-xs text-t-accent-text font-medium">
+                            {conversation.memberCount} members
+                        </span>
+                    )}
+                    {!isGroup && isOnline && (
+                        <span className="text-xs text-t-green font-medium">Online</span>
+                    )}
                 </div>
             </div>
         </div>

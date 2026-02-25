@@ -7,14 +7,14 @@ export const getOrCreateDM = mutation({
     args: { otherUserId: v.id("users") },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new ConvexError("Unauthorized");
+        if (!identity) throw new ConvexError("Unauthenticated");
 
         const currentUser = await ctx.db
             .query("users")
             .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
             .first();
 
-        if (!currentUser) throw new ConvexError("User not found");
+        if (!currentUser) throw new ConvexError("User not found - please sync your user first.");
 
         if (currentUser._id === args.otherUserId) {
             throw new ConvexError("Cannot start a conversation with yourself");
@@ -72,7 +72,7 @@ export const createGroup = mutation({
     },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new ConvexError("Unauthorized");
+        if (!identity) throw new ConvexError("Unauthenticated");
 
         const currentUser = await ctx.db
             .query("users")
@@ -138,13 +138,16 @@ export const getConversation = query({
         if (!membership) return null;
 
         let otherMember: Doc<"users"> | null = null;
+        let memberCount = 0;
+
+        const members = await ctx.db
+            .query("conversationMembers")
+            .withIndex("by_conversationId", (q) => q.eq("conversationId", args.conversationId))
+            .collect();
+
+        memberCount = members.length;
 
         if (!conversation.isGroup) {
-            const members = await ctx.db
-                .query("conversationMembers")
-                .withIndex("by_conversationId", (q) => q.eq("conversationId", args.conversationId))
-                .collect();
-
             const otherMembership = members.find(m => m.userId !== currentUser._id);
             if (otherMembership) {
                 otherMember = await ctx.db.get(otherMembership.userId);
@@ -154,6 +157,7 @@ export const getConversation = query({
         return {
             ...conversation,
             otherMember,
+            memberCount,
         };
     },
 });
@@ -183,13 +187,16 @@ export const getConversations = query({
 
                 let otherMember: Doc<"users"> | null = null;
                 let lastMessage: Doc<"messages"> | null = null;
+                let memberCount = 0;
+
+                const members = await ctx.db
+                    .query("conversationMembers")
+                    .withIndex("by_conversationId", (q) => q.eq("conversationId", conversation._id))
+                    .collect();
+
+                memberCount = members.length;
 
                 if (!conversation.isGroup) {
-                    const members = await ctx.db
-                        .query("conversationMembers")
-                        .withIndex("by_conversationId", (q) => q.eq("conversationId", conversation._id))
-                        .collect();
-
                     const otherMembership = members.find(m => m.userId !== currentUser._id);
                     if (otherMembership) {
                         otherMember = await ctx.db.get(otherMembership.userId);
@@ -232,6 +239,7 @@ export const getConversations = query({
                     otherMember,
                     lastMessage,
                     unreadCount,
+                    memberCount,
                 };
             })
         );

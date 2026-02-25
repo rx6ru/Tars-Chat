@@ -8,14 +8,14 @@ export const getMessages = query({
     },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new ConvexError("Unauthorized");
+        if (!identity) return [];
 
         const currentUser = await ctx.db
             .query("users")
             .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
             .first();
 
-        if (!currentUser) throw new ConvexError("User not found");
+        if (!currentUser) return [];
 
         // Verify membership
         const membership = await ctx.db
@@ -26,7 +26,7 @@ export const getMessages = query({
             .first();
 
         if (!membership) {
-            throw new ConvexError("Not a member of this conversation");
+            return [];
         }
 
         const messages = await ctx.db
@@ -76,7 +76,7 @@ export const sendMessage = mutation({
     },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new ConvexError("Unauthorized");
+        if (!identity) throw new ConvexError("Unauthenticated");
 
         const currentUser = await ctx.db
             .query("users")
@@ -114,7 +114,7 @@ export const deleteMessage = mutation({
     args: { messageId: v.id("messages") },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new ConvexError("Unauthorized");
+        if (!identity) throw new ConvexError("Unauthenticated");
 
         const currentUser = await ctx.db
             .query("users")
@@ -132,7 +132,6 @@ export const deleteMessage = mutation({
 
         await ctx.db.patch(args.messageId, {
             isDeleted: true,
-            // We do not delete content per PDA soft delete rules
         });
     },
 });

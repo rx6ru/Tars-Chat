@@ -1,18 +1,16 @@
-import { internalMutation, query } from "./_generated/server";
+import { internalMutation, query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 export const getMe = query({
     args: {},
     handler: async (ctx) => {
         const identity = await ctx.auth.getUserIdentity();
-        if (!identity) {
-            return null;
-        }
-        const user = await ctx.db
+        if (!identity) return null;
+
+        return await ctx.db
             .query("users")
             .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
             .first();
-        return user;
     },
 });
 
@@ -20,13 +18,12 @@ export const getUsers = query({
     args: {},
     handler: async (ctx) => {
         const identity = await ctx.auth.getUserIdentity();
-        if (!identity) {
-            throw new Error("Unauthorized");
-        }
+        if (!identity) return [];
+
+        const currentClerkId = identity.subject;
 
         const users = await ctx.db.query("users").collect();
-        // Exclude current user
-        return users.filter((u) => u.clerkId !== identity.subject);
+        return users.filter((u) => u.clerkId !== currentClerkId);
     },
 });
 
@@ -34,25 +31,28 @@ export const searchUsers = query({
     args: { query: v.string() },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
-        if (!identity) {
-            throw new Error("Unauthorized");
-        }
+        if (!identity) return [];
 
-        const { query } = args;
-        if (!query) {
-            return [];
-        }
-
-        const users = await ctx.db.query("users").collect();
         const currentClerkId = identity.subject;
+        const { query } = args;
 
-        return users.filter((u) => {
-            // Exclude current user and check if name includes query (case-insensitive)
+        const allUsers = await ctx.db.query("users").collect();
+
+        // If no query string, return everyone except the current user
+        if (!query || query.trim() === "") {
+            return allUsers.filter((u) => u.clerkId !== currentClerkId);
+        }
+
+        // If there is a query, filter by string match AND exclude current user
+        const searchLower = query.toLowerCase();
+        return allUsers.filter((u) => {
             if (u.clerkId === currentClerkId) return false;
-            return u.name.toLowerCase().includes(query.toLowerCase());
+            return u.name.toLowerCase().includes(searchLower) ||
+                u.email.toLowerCase().includes(searchLower);
         });
     },
 });
+
 
 export const upsertUser = internalMutation({
     args: {
@@ -87,3 +87,67 @@ export const upsertUser = internalMutation({
         }
     },
 });
+
+export const storeUser = mutation({
+    args: {},
+    handler: async (ctx) => {
+        const identity = await ctx.auth.getUserIdentity();
+        console.log("getUserIdentity in storeUser:", identity?.subject || "null");
+        if (!identity) {
+            return null;
+        }
+
+        // Check if we've already stored this user.
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+            .unique();
+
+        if (user !== null) {
+            // Update name/image if they changed
+            const name = `${identity.givenName ?? ""} ${identity.familyName ?? ""}`.trim() || identity.name || "User";
+            if (user.name !== name || user.imageUrl !== identity.pictureUrl) {
+                await ctx.db.patch(user._id, {
+                    name,
+                    imageUrl: identity.pictureUrl ?? "",
+                });
+            }
+            return user._id;
+        }
+
+        // If it's a new user, create them.
+        const name = `${identity.givenName ?? ""} ${identity.familyName ?? ""}`.trim() || identity.name || "User";
+        console.log("Creating new user in Convex:", name, identity.subject);
+        return await ctx.db.insert("users", {
+            clerkId: identity.subject,
+            name,
+            email: identity.email ?? "",
+            imageUrl: identity.pictureUrl ?? "",
+            isOnline: true,
+            lastSeen: Date.now(),
+        });
+    },
+});
+
+export const debugListAllUsers = query({
+    args: {},
+    handler: async (ctx) => {
+        return await ctx.db.query("users").collect();
+    },
+});
+
+export const createTestUser = mutation({
+    args: { name: v.string() },
+    handler: async (ctx, args) => {
+        return await ctx.db.insert("users", {
+            clerkId: "test-" + Date.now(),
+            name: args.name,
+            email: "test@example.com",
+            imageUrl: "",
+            isOnline: true,
+            lastSeen: Date.now(),
+        });
+    },
+});
+
+

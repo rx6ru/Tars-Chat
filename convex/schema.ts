@@ -10,7 +10,9 @@ export default defineSchema({
         imageUrl: v.string(),
         isOnline: v.boolean(),
         lastSeen: v.number(),             // Unix timestamp ms
-    }).index("by_clerkId", ["clerkId"]),
+    })
+        .index("by_clerkId", ["clerkId"])
+        .index("by_name", ["name"]),
 
     conversations: defineTable({
         name: v.optional(v.string()),     // null for DMs, string for group chats

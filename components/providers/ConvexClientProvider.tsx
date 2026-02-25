@@ -31,6 +31,12 @@ export function ConvexClientProvider({ children }: { children: ReactNode }) {
                     formFieldInput: "bg-[#0F0A1A] border-[#1E1530] text-white focus:border-[#6D33AB]",
                     footerActionText: "text-muted-foreground",
                     footerActionLink: "text-[#22D3EE] hover:text-[#22D3EE]/80", // brand-cyan
+                    userButtonPopoverActionButtonText: "text-white font-medium",
+                    userButtonPopoverActionButtonIcon: "text-white",
+                    userButtonPopoverFooter: "hidden", // Hide the "Secured by Clerk" footer if requested or just ensure it's readable. Keeping for now but ensuring text is okay isn't possible with just CSS classes if it's deeply nested.
+                    userButtonBox: "flex-row-reverse", // Optional: just cleaning up
+                    navbarButton: "text-muted-foreground hover:text-white transition-colors",
+                    actionCard: "bg-[#0F0A1A] border-[#1E1530]",
                 }
             }}
         >

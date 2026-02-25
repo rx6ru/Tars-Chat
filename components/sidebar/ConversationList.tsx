@@ -3,11 +3,10 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
-import { Users } from "lucide-react";
+import { Users, MessageSquare } from "lucide-react";
 
 export function ConversationList() {
     const conversations = useQuery(api.conversations.getConversations);
@@ -31,15 +30,20 @@ export function ConversationList() {
 
     if (conversations.length === 0) {
         return (
-            <div className="flex h-32 flex-col items-center justify-center text-center p-4 text-sm text-muted-foreground">
-                <p>No conversations yet.</p>
-                <p>Search for a user to start chatting!</p>
+            <div className="flex flex-1 flex-col items-center justify-center space-y-4 p-8 text-center text-t-text-mid">
+                <div className="rounded-full bg-t-bg-item p-4 text-t-accent">
+                    <MessageSquare className="h-8 w-8" />
+                </div>
+                <div className="space-y-1">
+                    <h3 className="text-sm font-medium text-t-text-hi">No chats</h3>
+                    <p className="text-xs">Search to start messaging</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
             <div className="flex flex-col gap-1 p-2">
                 {conversations.map((conv) => {
                     const isGroup = conv.isGroup;
@@ -50,42 +54,42 @@ export function ConversationList() {
                         <button
                             key={conv._id}
                             onClick={() => router.push(`/conversation/${conv._id}`)}
-                            className="group relative flex w-full items-center gap-3 rounded-lg p-3 text-left hover:bg-[#1E1530]/50 transition-colors"
+                            className="group relative flex w-full items-center gap-3 rounded-md p-2 text-left bg-transparent border-l-2 border-transparent hover:bg-t-bg-item hover:border-l-2 hover:border-t-accent transition-all"
                         >
-                            <Avatar className="h-12 w-12 border border-[#1E1530] bg-[#1A1128]">
+                            <Avatar className="h-10 w-10 shrink-0 bg-t-bg-item border border-t-border">
                                 {imageUrl ? (
-                                    <AvatarImage src={imageUrl} alt={name} />
-                                ) : isGroup ? (
-                                    <div className="flex h-full w-full items-center justify-center bg-[#1E1530] text-[#6D33AB]">
-                                        <Users className="h-5 w-5" />
-                                    </div>
+                                    <AvatarImage src={imageUrl} alt={name || "User"} />
                                 ) : (
-                                    <AvatarFallback className="bg-[#1A1128] text-white">
+                                    <div className="flex h-full w-full items-center justify-center bg-t-bg-item text-t-text-mid text-xs font-medium">
                                         {(name || "?").charAt(0).toUpperCase()}
-                                    </AvatarFallback>
+                                    </div>
                                 )}
                             </Avatar>
 
-                            <div className="flex flex-1 flex-col overflow-hidden">
+                            <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
                                 <div className="flex items-center justify-between">
-                                    <span className="truncate font-medium text-white">
+                                    <span className="truncate text-sm font-medium text-t-text-hi">
                                         {name}
                                     </span>
                                     {conv.lastMessage && (
-                                        <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
+                                        <span className="text-[10px] text-t-text-mid shrink-0 ml-2">
                                             {format(conv.lastMessage.createdAt, "h:mm a")}
                                         </span>
                                     )}
                                 </div>
 
                                 <div className="flex items-center justify-between mt-0.5">
-                                    <span className="truncate text-xs text-muted-foreground pr-2">
+                                    <span className="truncate text-xs text-t-text-mid pr-2">
+                                        {isGroup && !conv.lastMessage && (
+                                            <span className="text-t-accent-text font-medium">{conv.memberCount} members</span>
+                                        )}
+                                        {!isGroup && !conv.lastMessage && "Started a conversation"}
                                         {conv.lastMessage?.isDeleted
                                             ? "This message was deleted"
-                                            : conv.lastMessage?.content || "Started a conversation"}
+                                            : conv.lastMessage?.content}
                                     </span>
                                     {conv.unreadCount > 0 && (
-                                        <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#6D33AB] px-1.5 text-[10px] font-medium text-white">
+                                        <span className="flex shrink-0 h-4 min-w-[16px] items-center justify-center rounded-sm bg-t-accent px-1 text-[9px] font-bold text-white">
                                             {conv.unreadCount > 99 ? "99+" : conv.unreadCount}
                                         </span>
                                     )}
@@ -95,6 +99,6 @@ export function ConversationList() {
                     );
                 })}
             </div>
-        </ScrollArea>
+        </div>
     );
 }
