@@ -289,3 +289,41 @@ export const markAsRead = mutation({
         }
     },
 });
+
+export const getGroupMembers = query({
+    args: { conversationId: v.id("conversations") },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) return [];
+
+        const currentUser = await ctx.db
+            .query("users")
+            .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+            .first();
+
+        if (!currentUser) return [];
+
+        const membership = await ctx.db
+            .query("conversationMembers")
+            .withIndex("by_conversationId_userId", (q) =>
+                q.eq("conversationId", args.conversationId).eq("userId", currentUser._id)
+            )
+            .first();
+
+        if (!membership) return [];
+
+        const members = await ctx.db
+            .query("conversationMembers")
+            .withIndex("by_conversationId", (q) => q.eq("conversationId", args.conversationId))
+            .collect();
+
+        const users = await Promise.all(
+            members.map(async (m) => {
+                const user = await ctx.db.get(m.userId);
+                return user;
+            })
+        );
+
+        return users.filter((u): u is NonNullable<typeof u> => u !== null);
+    },
+});

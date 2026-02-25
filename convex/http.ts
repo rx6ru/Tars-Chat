@@ -52,7 +52,7 @@ http.route({
                 clerkId: id,
                 name,
                 email: primaryEmail,
-                imageUrl: image_url || "",
+                imageUrl: image_url ? `${image_url}${image_url.includes('?') ? '&' : '?'}t=${Date.now()}` : "",
             });
 
             return new Response("User upserted successfully", { status: 200 });
