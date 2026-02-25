@@ -72,7 +72,7 @@ export function ChatPanel({ conversationId }: ChatPanelProps) {
     }
 
     return (
-        <div className="flex h-full flex-col bg-t-bg-app relative overflow-hidden">
+        <div className="flex flex-1 w-full h-full flex-col bg-t-bg-app relative overflow-hidden">
             <ChatHeader conversation={conversation} />
             <MessageList
                 messages={messages}

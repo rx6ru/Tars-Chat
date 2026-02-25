@@ -28,14 +28,14 @@ export function Sidebar() {
     // Render nothing or a skeleton before hydration to prevent mismatch
     if (!isMounted) {
         return (
-            <aside className="relative flex h-full w-full md:max-w-[244px] flex-col overflow-hidden border-r border-t-border bg-t-bg-sidebar">
+            <aside className="relative flex h-full w-full md:max-w-[320px] flex-col overflow-hidden border-r border-t-border bg-t-bg-sidebar">
                 <SidebarHeader />
             </aside>
         );
     }
 
     return (
-        <aside className="relative flex h-full w-full md:max-w-[244px] flex-col overflow-hidden border-r border-t-border bg-t-bg-sidebar">
+        <aside className="relative flex h-full w-full md:max-w-[320px] flex-col overflow-hidden border-r border-t-border bg-t-bg-sidebar">
             <SidebarHeader />
             <div className="hidden md:flex flex-col border-b border-t-border pb-2">
                 <SidebarSearch />

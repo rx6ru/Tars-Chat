@@ -65,15 +65,15 @@ export function MessageBubble({ message, isGroup, onReply }: MessageBubbleProps)
     }, {} as Record<string, { count: number, me: boolean, users: string[] }>);
 
     return (
-        <div className={`flex w-full ${isMine ? "justify-end" : "justify-start"} motion-preset-slide-up motion-duration-200`}>
+        <div className={`flex w-full ${isMine ? "justify-end" : "justify-start"} motion-preset-slide-up motion-duration-200 mb-2`}>
             <div className={cn(
-                "group flex max-w-[75%] gap-2",
+                "group flex w-fit max-w-[85%] gap-2",
                 isMine ? "flex-row-reverse" : "flex-row"
             )}>
 
                 {/* Avatar for received messages */}
                 {!isMine && (
-                    <Avatar className="h-8 w-8 mt-auto shrink-0 border-none bg-t-bg-item">
+                    <Avatar className="h-8 w-8 shrink-0 mt-auto border-none bg-t-bg-item">
                         <AvatarImage src={message.sender.imageUrl} alt={message.sender.name} />
                         <AvatarFallback className="bg-t-bg-item text-xs text-t-text-mid font-medium">
                             {message.sender.name.charAt(0).toUpperCase()}
@@ -82,7 +82,7 @@ export function MessageBubble({ message, isGroup, onReply }: MessageBubbleProps)
                 )}
 
                 {/* Message Content Bubble Container */}
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1 min-w-0">
                     <div className={cn(
                         "relative flex flex-col rounded-2xl px-4 py-2",
                         isMine
@@ -159,13 +159,13 @@ export function MessageBubble({ message, isGroup, onReply }: MessageBubbleProps)
                 {/* Action Bar (Hover) */}
                 {!message.isDeleted && (
                     <div className={cn(
-                        "opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1",
+                        "opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 shrink-0 mt-auto mb-2",
                         isMine ? "flex-row-reverse" : "flex-row"
                     )}>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <button
-                                    className="p-1.5 rounded-full hover:bg-t-bg-item text-t-text-mid hover:text-t-text-hi transition-colors"
+                                    className="p-1.5 rounded-full bg-t-bg-app hover:bg-t-bg-item text-t-text-mid hover:text-t-text-hi transition-colors"
                                     title="React"
                                 >
                                     <Smile className="h-4 w-4" />
@@ -190,7 +190,7 @@ export function MessageBubble({ message, isGroup, onReply }: MessageBubbleProps)
 
                         <button
                             onClick={() => onReply && onReply(message)}
-                            className="p-1.5 rounded-full hover:bg-t-bg-item text-t-text-mid hover:text-t-text-hi transition-colors"
+                            className="p-1.5 rounded-full bg-t-bg-app hover:bg-t-bg-item text-t-text-mid hover:text-t-text-hi transition-colors"
                             title="Reply"
                         >
                             <Reply className="h-4 w-4" />
@@ -200,7 +200,7 @@ export function MessageBubble({ message, isGroup, onReply }: MessageBubbleProps)
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <button
-                                        className="p-1.5 rounded-full hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+                                        className="p-1.5 rounded-full bg-t-bg-app hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
                                         title="Delete Message"
                                     >
                                         <Trash2 className="h-4 w-4" />

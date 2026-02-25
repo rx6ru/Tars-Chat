@@ -24,7 +24,7 @@ export function ChatLayoutWrapper({ children }: { children: React.ReactNode }) {
             {/* Sidebar wrapper. On mobile: visible only if on root. On desktop: always visible. */}
             <div
                 className={`flex-shrink-0 h-full border-r border-t-border
-                    ${isRoot ? "w-full md:w-[244px]" : "hidden md:flex md:w-[244px]"}
+                    ${isRoot ? "w-full md:w-[320px]" : "hidden md:flex md:w-[320px]"}
                 `}
             >
                 <Sidebar />
