@@ -24,6 +24,15 @@ export function NewMessageDrawer() {
     const [selectedMembers, setSelectedMembers] = useState<Id<"users">[]>([]);
 
     const searchResults = useQuery(api.users.searchUsers, { query });
+    const conversations = useQuery(api.conversations.getConversations);
+
+    const existingDmUserIds = new Set(
+        conversations
+            ?.filter(c => !c.isGroup && c.otherMember)
+            .map(c => c.otherMember!._id) || []
+    );
+
+    const dmSearchResults = searchResults?.filter(u => !existingDmUserIds.has(u._id));
     const getOrCreateDM = useMutation(api.conversations.getOrCreateDM);
     const createGroup = useMutation(api.conversations.createGroup);
     const router = useRouter();
@@ -121,16 +130,16 @@ export function NewMessageDrawer() {
                         <div className="flex-1 overflow-hidden">
                             <ScrollArea className="h-full">
                                 <div className="flex flex-col gap-1 p-2">
-                                    {searchResults === undefined ? (
+                                    {dmSearchResults === undefined ? (
                                         <div className="p-4 text-center text-sm text-muted-foreground animate-pulse">
                                             Loading...
                                         </div>
-                                    ) : searchResults.length === 0 ? (
+                                    ) : dmSearchResults.length === 0 ? (
                                         <div className="p-4 text-center text-sm text-muted-foreground">
-                                            {query ? `No users found matching "${query}"` : "No other users available"}
+                                            {query ? `No new users found matching "${query}"` : "No new users available"}
                                         </div>
                                     ) : (
-                                        searchResults.map((user) => (
+                                        dmSearchResults.map((user) => (
                                             <button
                                                 key={user._id}
                                                 onClick={() => onSelectDM(user._id)}

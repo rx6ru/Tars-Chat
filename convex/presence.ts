@@ -43,7 +43,10 @@ export const setOffline = mutation({
 });
 
 export const setTyping = mutation({
-    args: { conversationId: v.id("conversations") },
+    args: {
+        conversationId: v.id("conversations"),
+        isTyping: v.boolean(),
+    },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
         if (!identity) return;
@@ -73,16 +76,23 @@ export const setTyping = mutation({
             )
             .first();
 
-        if (typingRecord) {
-            await ctx.db.patch(typingRecord._id, {
-                lastTypedAt: Date.now(),
-            });
+        if (args.isTyping) {
+            if (typingRecord) {
+                await ctx.db.patch(typingRecord._id, {
+                    lastTypedAt: Date.now(),
+                });
+            } else {
+                await ctx.db.insert("typingIndicators", {
+                    conversationId: args.conversationId,
+                    userId: currentUser._id,
+                    lastTypedAt: Date.now(),
+                });
+            }
         } else {
-            await ctx.db.insert("typingIndicators", {
-                conversationId: args.conversationId,
-                userId: currentUser._id,
-                lastTypedAt: Date.now(),
-            });
+            // Explicitly delete the record to trigger a reactive update for other clients
+            if (typingRecord) {
+                await ctx.db.delete(typingRecord._id);
+            }
         }
     },
 });
@@ -115,13 +125,9 @@ export const getTypingUsers = query({
             .withIndex("by_conversationId", (q) => q.eq("conversationId", args.conversationId))
             .collect();
 
-        // Find users typing within the last 2 seconds (excluding self)
-        const activeTypingMsec = 2500;
-        const now = Date.now();
-
         const typingUsers = await Promise.all(
             typingRecords
-                .filter((record) => record.userId !== currentUser._id && now - record.lastTypedAt < activeTypingMsec)
+                .filter((record) => record.userId !== currentUser._id)
                 .map(async (record) => {
                     const user = await ctx.db.get(record.userId);
                     return user;

@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { Users, MessageSquare } from "lucide-react";
 
-export function ConversationList() {
+export function ConversationList({ filter = "dms" }: { filter?: "dms" | "groups" }) {
     const conversations = useQuery(api.conversations.getConversations);
     const router = useRouter();
 
@@ -28,15 +28,25 @@ export function ConversationList() {
         );
     }
 
-    if (conversations.length === 0) {
+    const filteredConversations = conversations.filter(conv => {
+        if (filter === "dms") return !conv.isGroup;
+        if (filter === "groups") return conv.isGroup;
+        return true;
+    });
+
+    if (filteredConversations.length === 0) {
         return (
             <div className="flex flex-1 flex-col items-center justify-center space-y-4 p-8 text-center text-t-text-mid">
                 <div className="rounded-full bg-t-bg-item p-4 text-t-accent">
-                    <MessageSquare className="h-8 w-8" />
+                    {filter === "groups" ? <Users className="h-8 w-8" /> : <MessageSquare className="h-8 w-8" />}
                 </div>
                 <div className="space-y-1">
-                    <h3 className="text-sm font-medium text-t-text-hi">No chats</h3>
-                    <p className="text-xs">Search to start messaging</p>
+                    <h3 className="text-sm font-medium text-t-text-hi">
+                        {filter === "groups" ? "No groups" : "No chats"}
+                    </h3>
+                    <p className="text-xs">
+                        {filter === "groups" ? "Create a group to start chatting" : "Find an active user to start chatting"}
+                    </p>
                 </div>
             </div>
         );
@@ -45,7 +55,7 @@ export function ConversationList() {
     return (
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
             <div className="flex flex-col gap-1 p-2">
-                {conversations.map((conv) => {
+                {filteredConversations.map((conv) => {
                     const isGroup = conv.isGroup;
                     const name = isGroup ? conv.name : conv.otherMember?.name || "Unknown User";
                     const imageUrl = !isGroup ? conv.otherMember?.imageUrl : undefined;

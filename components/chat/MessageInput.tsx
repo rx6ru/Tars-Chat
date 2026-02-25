@@ -22,7 +22,7 @@ export function MessageInput({ conversationId, replyingTo, onCancelReply }: Mess
     const [content, setContent] = useState("");
     const [isSending, setIsSending] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const { onType } = useTypingIndicator(conversationId);
+    const { onType, stopTyping } = useTypingIndicator(conversationId);
 
     // Auto-focus on conversation change or when a reply is initiated
     useEffect(() => {
@@ -47,6 +47,7 @@ export function MessageInput({ conversationId, replyingTo, onCancelReply }: Mess
         try {
             setIsSending(true);
             setContent("");
+            stopTyping();
 
             // Reset textarea height after sending
             if (textareaRef.current) {
