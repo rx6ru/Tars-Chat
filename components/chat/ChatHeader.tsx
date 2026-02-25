@@ -33,7 +33,7 @@ export function ChatHeader({ conversation }: ChatHeaderProps) {
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-t-border bg-t-bg-app px-4">
             <div className="flex items-center gap-3">
                 <Button variant="ghost" size="icon" asChild className="md:hidden text-t-text-hi hover:bg-t-bg-item hover:text-t-text-hi">
-                    <Link href="/">
+                    <Link href="/chat">
                         <ArrowLeft className="h-5 w-5" />
                         <span className="sr-only">Back</span>
                     </Link>

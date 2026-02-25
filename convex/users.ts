@@ -104,11 +104,22 @@ export const storeUser = mutation({
             .unique();
 
         if (user !== null) {
-            // We NO LONGER aggressively patch name or imageUrl here.
-            // Why? Clerk JWTs take time to mint on updates (like profile pic changes).
-            // A rapid page reload would cause `storeUser` to fire with the OLD stale JWT image,
-            // instantly reverting the fast `user.updated` webhook that correctly updated the Convex DB.
-            // Webhooks are the authoritative source truth for metadata updates!
+            const name = `${identity.givenName ?? ""} ${identity.familyName ?? ""}`.trim() || identity.name || "User";
+
+            // Extract the base URL without query parameters (like our ?t= timestamp from the webhook)
+            const jwtBaseUrl = identity.pictureUrl?.split('?')[0] ?? "";
+            const dbBaseUrl = user.imageUrl?.split('?')[0] ?? "";
+
+            // If the base URL fundamentally changed, or the name changed, we apply the JWT patch.
+            // If the base URLs match, we LEAVE user.imageUrl ALONE because the webhook
+            // might have appended a ?t= timestamp for cache-busting that the incoming JWT lacks.
+            if (jwtBaseUrl !== dbBaseUrl || user.name !== name) {
+                await ctx.db.patch(user._id, {
+                    name: user.name !== name ? name : user.name,
+                    imageUrl: jwtBaseUrl !== dbBaseUrl ? (identity.pictureUrl ?? "") : user.imageUrl,
+                });
+            }
+
             return user._id;
         }
 

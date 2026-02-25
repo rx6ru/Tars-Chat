@@ -1,12 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SidebarHeader } from "./SidebarHeader";
 import { SidebarSearch } from "./SidebarSearch";
 import { ConversationList } from "./ConversationList";
 
 export function Sidebar() {
     const [view, setView] = useState<"dms" | "groups">("dms");
+    const [isMounted, setIsMounted] = useState(false);
+
+    // Load saved view preference from localStorage on mount
+    useEffect(() => {
+        setIsMounted(true);
+        const savedView = localStorage.getItem("sidebarView") as "dms" | "groups" | null;
+        if (savedView === "dms" || savedView === "groups") {
+            setView(savedView);
+        }
+    }, []);
+
+    // Save view preference whenever it changes
+    useEffect(() => {
+        if (isMounted) {
+            localStorage.setItem("sidebarView", view);
+        }
+    }, [view, isMounted]);
+
+    // Render nothing or a skeleton before hydration to prevent mismatch
+    if (!isMounted) {
+        return (
+            <aside className="relative flex h-full w-full md:max-w-[244px] flex-col overflow-hidden border-r border-t-border bg-t-bg-sidebar">
+                <SidebarHeader />
+            </aside>
+        );
+    }
 
     return (
         <aside className="relative flex h-full w-full md:max-w-[244px] flex-col overflow-hidden border-r border-t-border bg-t-bg-sidebar">
